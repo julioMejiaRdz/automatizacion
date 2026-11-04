@@ -1,0 +1,6 @@
+node_modules
+dist
+coverage
+package-lock.json
+# Componentes generados por shadcn/ui: se mantienen como los entrega el CLI
+frontend/src/components/ui

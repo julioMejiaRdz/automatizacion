@@ -1,0 +1,14 @@
+# Normaliza finales de línea. Los scripts y configuraciones que se ejecutan dentro de
+# contenedores Linux deben quedar con LF aunque se clone el repo en Windows.
+* text=auto eol=lf
+
+*.sh text eol=lf
+*.conf text eol=lf
+*.template text eol=lf
+Dockerfile text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+*.png binary
+*.jpg binary
+*.ico binary

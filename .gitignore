@@ -51,3 +51,13 @@ coverage/
 .cache/
 .turbo/
 *.local
+
+# ─── Docker / producción ─────────────────────────────────────
+# Usuarios, permisos y certificados de Mosquitto (se crean en el servidor)
+docker/mosquitto/auth/*
+!docker/mosquitto/auth/.gitkeep
+docker/mosquitto/certs/*
+!docker/mosquitto/certs/.gitkeep
+# Certificado propio de Nginx (TLS_MODE=custom)
+docker/nginx/certs/*
+!docker/nginx/certs/.gitkeep

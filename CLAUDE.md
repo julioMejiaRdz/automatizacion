@@ -2,42 +2,44 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Overview
+## Qué es
 
-Template for real-time IoT automation: PLC devices publish readings to a Mosquitto MQTT broker → the Express backend subscribes and relays each payload over Socket.IO → an authenticated React dashboard renders it live. Two independent npm projects, `backend/` and `frontend/` — there is no root `package.json`, so run commands from inside each folder. Code comments, UI text and API error messages are in Spanish; keep that convention.
+Plantilla (boilerplate) para proyectos de automatización en tiempo real: los PLC publican por MQTT a Mosquitto → el backend Express se suscribe y reenvía cada lectura por Socket.IO → un dashboard React autenticado la muestra. Todo en español: comentarios, UI, mensajes de error de la API y documentación (los identificadores de código en inglés). El README es la documentación de uso; aquí solo lo necesario para trabajar en el código.
 
-## Commands
+## Comandos
 
-Backend (`backend/`, needs MongoDB, plus a broker if `MQTT_HOST` is set; copy `.env.example` → `.env`):
-- `npm run dev` — nodemon + ts-node on `src/index.ts` (port 3000)
-- `npm run dev:api` — same, but passes `--api`, which makes CORS also accept requests with no `Origin` (Postman/curl)
-- `npm run build` / `npm start` — `tsc` to `dist/`, then run it
+Desde la raíz (orquesta `backend/` y `frontend/`, que son proyectos npm independientes):
 
-Frontend (`frontend/`, copy `.env.example` → `.env.local`):
-- `npm run dev` — Vite on port 5173
-- `npm run build` — `tsc -b && vite build` (this is the type check)
-- `npm run lint` — ESLint
+- `npm run install:all` · `npm run dev` (ambos en paralelo) · `npm run build` · `npm run lint` · `npm run typecheck` · `npm test` · `npm run format`
+- `npm run infra:up` levanta MongoDB, Mosquitto (anónimo) y Mailpit (`http://localhost:8025`) para desarrollo.
+- `npm run seed` crea/actualiza los dispositivos de `backend/src/scripts/seed.ts`.
 
-There is no test suite in either project.
+Por proyecto: `npm run <script> --prefix backend|frontend`. Un solo test: `npx vitest run tests/mqtt.test.ts` en `backend/`, o `npx vitest run src/api/errors.test.ts` en `frontend/`. Los tests del backend no usan MongoDB (solo rutas que responden antes de consultar la base); `tests/setup.ts` define las variables de entorno mínimas.
 
-## Architecture
+## Arquitectura
 
-**Backend data path** (`backend/src`): `index.ts` only calls `listen`; `server.ts` loads dotenv, connects Mongo, mounts `/api/auth`, then calls `webSocket(server)` (`services/websocket`). That function creates the Socket.IO server, applies `socketAuth` (verifies the JWT from `socket.handshake.auth.token`), and calls `initMqtt(io)` — so the MQTT client lives inside the WebSocket service. Clients emit `join-device` with a device id to join room `device-{id}`. The MQTT service JSON-parses each message, takes the device id from the second topic segment (`opp/<deviceId>`), and emits `mqtt-message` `{ topic, data }` to that room.
+**Backend** (`backend/src`, CommonJS, TypeScript estricto, ejecutado con `tsx` en desarrollo):
 
-Currently hardcoded / unfinished:
-- The MQTT subscription is a single literal topic (`opp/A24308160`) and `DashboardView` hardcodes the same `deviceId`. The `Device` model (`_id`, `topic`, `fields[{key, unit}]`) exists but is not used anywhere yet — it is meant to drive subscriptions and dashboard fields.
-- Auth flow creates 6-digit confirmation/reset tokens (`utils/token.ts`, `Token` model) but no email is actually sent.
-- Backend `tsconfig` has `strict: false`.
+- `config/env.ts` valida `process.env` con zod al importarse y termina el proceso si falta algo. Usa siempre `env` en lugar de `process.env`.
+- `server.ts` exporta `createApp()` (Express sin abrir puerto, usado por los tests). `index.ts` conecta MongoDB, crea el servidor HTTP, `initWebSocket` y `initMqtt(emitReading)`, y maneja SIGTERM.
+- Express 5: las excepciones de controladores async llegan solas a `middleware/errorHandler.ts`, por eso los controladores no usan try/catch. Patrón de rutas: cadena de `express-validator` → `handleInputErrors` (400 `{ errors }`) → controlador (errores de negocio `{ error }`).
+- `services/mqtt`: mapa `topic → deviceId` cargado de la colección `Device`; `syncDeviceSubscriptions()` se llama al conectar, en cada alta/cambio/baja de dispositivo (`DeviceController`) y cada 30 s (para cambios hechos desde otro proceso, como el seed). `parsePayload` normaliza el JSON plano en `{ deviceId, timestamp, values }` y guarda la última lectura por dispositivo.
+- `services/websocket`: `socketAuth` valida el JWT de `handshake.auth.token`; `join-device` (con ack) une a la room `device-{id}` si el dispositivo existe y envía la última lectura; el servidor emite `device-reading`. No hay permisos por usuario sobre dispositivos (decisión de la plantilla).
+- `Device._id` es un string (el ID del dispositivo), no un ObjectId. `Token` usa un índice TTL de 10 min sobre `createdAt`.
+- Correos con Nodemailer (`config/mailer.ts`, `emails/AuthEmail.ts`); en desarrollo van a Mailpit.
 
-**Auth**: `POST /api/auth/login` returns a raw JWT string (1-day expiry, payload `{ id }`). Routes validate with `express-validator` chains followed by `handleInputErrors` (400 `{ errors }`); controllers return `{ error: message }` on failure. `authenticate` middleware puts the user on `req.user`.
+**Frontend** (`frontend/src`, alias `@/` → `src/`):
 
-**Frontend** (`frontend/src`, `@/` aliases `src/`):
-- The JWT is stored in `localStorage` under `AUTH_TOKEN`; `lib/axios.ts` adds it as a Bearer header, and `lib/socket.ts` sends it as Socket.IO auth (a callback, so it's re-read on each connect). The socket is a module singleton with `autoConnect: false`.
-- `AppLayout` gates protected routes with `useAuth` (React Query `['user']` → `GET /auth/user`), redirects to `/auth/login` on error, and wraps children in `SocketProvider`, which connects on mount / disconnects on unmount. Views access the socket via `useSocket()`.
-- API functions in `api/AuthAPI.ts` rethrow `error.response.data.error` as `Error` for React Query mutations. Types/schemas live in `types/index.ts` and use `zod`, which is imported but not declared in `frontend/package.json` (works only via a transitive install).
-- UI is Tailwind v4 + shadcn (`components.json`, new-york style, `@magicui` registry) under `components/ui`. Dark mode is a `dark` class on `<html>`, set before render by an inline script injected by the `themeInitPlugin` in `vite.config.ts` (reads `localStorage.theme`).
+- JWT en `localStorage` (`AUTH_TOKEN_KEY` de `lib/config.ts`); `lib/axios.ts` lo envía como Bearer y `lib/socket.ts` como auth de Socket.IO (singleton con `autoConnect: false`). Sin `VITE_WS_URL` el socket usa el mismo origen (producción detrás de Nginx).
+- `router.tsx` carga layouts y vistas con `lazy`. `AppLayout` protege las rutas con `useAuth` (React Query `['user']`), monta el sidebar de shadcn y `SocketProvider`. Nuevas vistas: ruta en `router.tsx` + entrada en `NAV_ITEMS` de `components/AppSidebar.tsx`.
+- `hooks/useDeviceReadings` se une a las rooms y se re-une en cada reconexión. `api/errors.ts#toApiError` convierte errores de axios en `Error` con el mensaje del backend.
+- UI: Tailwind 4 + shadcn/ui (`components/ui/`, generado por el CLI, excluido de Prettier y con reglas de ESLint relajadas). shadcn 4 usa el paquete `cn` (no clsx/tailwind-merge); `lib/utils.ts` lo reexporta. El tema oscuro es la clase `dark` en `<html>`, aplicada antes de pintar por `public/theme-init.js` (archivo externo para permitir CSP `script-src 'self'`).
 
-## Environment
+**Docker**:
 
-Backend: `DATABASE_URL`, `PORT`, `FRONTEND_URL` (the only allowed CORS origin, for both REST and Socket.IO), `MQTT_HOST` / `MQTT_USER` / `MQTT_PASSWORD` (MQTT is skipped if `MQTT_HOST` is unset), `JWT_SECRET`.
-Frontend: `VITE_API_URL` (includes `/api`), `VITE_WS_URL`.
+- `docker-compose.yml`: solo infraestructura de desarrollo, puertos en 127.0.0.1.
+- `docker-compose.prod.yml`: `web` (imagen de `docker/nginx/Dockerfile`, contexto raíz: compila el frontend y lo sirve con Nginx), `backend`, `mongo` (red interna), `mosquitto` y `certbot` (solo con el perfil `letsencrypt`). `TLS_MODE` (`none` por defecto para LAN, `custom`, `letsencrypt`) lo interpreta `docker/nginx/40-app-config.sh`, que genera la config desde `docker/nginx/templates/` (HTTP o HTTPS) y, en `letsencrypt`, cambia a HTTPS sola al emitirse el certificado. HSTS se envía solo sobre HTTPS (`map $scheme` en `http-common.conf`). Nginx reenvía el `Host` original y el CORS del backend acepta peticiones del mismo origen, así que la app funciona con cualquier IP o nombre del servidor; `FRONTEND_URL` (`PUBLIC_URL` en producción) solo se usa para Vite en desarrollo y para los enlaces de los correos. Los scripts/configs para contenedores deben quedar con LF (`.gitattributes`).
+
+## Versiones
+
+TypeScript se mantiene en 6.0 porque typescript-eslint aún no soporta TypeScript 7. El frontend usa happy-dom para los tests porque jsdom 30 exige Node ≥ 24.15.

@@ -1,0 +1,203 @@
+# Stack completo de PRODUCCIÓN: Nginx (frontend + proxy), backend, MongoDB, Mosquitto y,
+# solo con TLS_MODE=letsencrypt, certbot.
+#
+#   cp .env.production.example .env.production   # y completar los valores
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+#
+# TLS_MODE (en .env.production) define cómo se sirve la web: none (solo HTTP, LAN),
+# custom (HTTPS con certificado propio) o letsencrypt (HTTPS con Let's Encrypt).
+# Ver README > Producción para los pasos previos (usuarios y certificados de Mosquitto, DNS).
+#
+# Medidas de seguridad aplicadas:
+# - Solo se publican 80/443 (Nginx; 443 solo atiende con TLS_MODE custom o letsencrypt) y 1883/8883 (Mosquitto). MongoDB y el backend no son accesibles desde fuera.
+# - MongoDB en una red interna sin salida a internet, con usuario root y usuario de aplicación separados.
+# - Contenedores con sistema de archivos de solo lectura, sin capacidades de Linux innecesarias,
+#   sin escalada de privilegios (no-new-privileges) y, donde la imagen lo permite, con usuario no root.
+# - Imágenes con versión fija, health checks, límites de memoria y rotación de logs.
+
+name: automatizacion
+
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: '10m'
+      max-file: '5'
+
+services:
+  web:
+    <<: *hardening
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+      args:
+        VITE_APP_NAME: ${APP_NAME:?Define APP_NAME}
+    image: automatizacion-web:latest
+    environment:
+      TLS_MODE: ${TLS_MODE:-none}
+      DOMAIN: ${DOMAIN:-}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      # TLS_MODE=custom: server.crt y server.key
+      - ./docker/nginx/certs:/etc/nginx/certs:ro
+      # TLS_MODE=letsencrypt: certificados y reto ACME compartidos con certbot
+      - letsencrypt:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    read_only: true
+    tmpfs:
+      - /etc/nginx/conf.d
+      - /var/cache/nginx
+      - /run
+      - /tmp
+    cap_drop: [ALL]
+    # El proceso maestro de Nginx necesita abrir 80/443 y cambiar a su usuario sin privilegios
+    cap_add: [NET_BIND_SERVICE, CHOWN, SETUID, SETGID]
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [edge]
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  # Solo se levanta con el perfil "letsencrypt" (COMPOSE_PROFILES=letsencrypt en .env.production)
+  certbot:
+    <<: *hardening
+    profiles: [letsencrypt]
+    image: certbot/certbot:v5.9.0
+    entrypoint: ['/bin/sh', '/run.sh']
+    environment:
+      DOMAIN: ${DOMAIN:-}
+      CERTBOT_EMAIL: ${CERTBOT_EMAIL:-}
+      CERTBOT_STAGING: ${CERTBOT_STAGING:-false}
+    volumes:
+      - ./docker/certbot/run.sh:/run.sh:ro
+      - letsencrypt:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/log/letsencrypt
+      - /var/lib/letsencrypt
+    cap_drop: [ALL]
+    depends_on:
+      web:
+        condition: service_healthy
+    networks: [edge]
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  backend:
+    <<: *hardening
+    build:
+      context: ./backend
+    image: automatizacion-backend:latest
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # URL con la que los usuarios abren la app: base de los enlaces de los correos
+      FRONTEND_URL: ${PUBLIC_URL:?Define PUBLIC_URL}
+      TRUST_PROXY: 1
+      DATABASE_URL: mongodb://${MONGO_APP_USER:?Define MONGO_APP_USER}:${MONGO_APP_PASSWORD:?Define MONGO_APP_PASSWORD}@mongo:27017/${MONGO_DB:?Define MONGO_DB}?authSource=${MONGO_DB}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      MQTT_URL: mqtt://mosquitto:1883
+      MQTT_USER: ${MQTT_USER:?Define MQTT_USER}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:?Define MQTT_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST:?Define SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT:?Define SMTP_PORT}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:?Define MAIL_FROM}
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    # edge: para que Nginx la alcance y para salir a internet (SMTP)
+    networks: [edge, db, mqtt]
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  mongo:
+    <<: *hardening
+    image: mongo:8.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:?Define MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?Define MONGO_ROOT_PASSWORD}
+      MONGO_DB: ${MONGO_DB}
+      MONGO_APP_USER: ${MONGO_APP_USER}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD}
+    volumes:
+      - mongo-data:/data/db
+      - mongo-config:/data/configdb
+      - ./docker/mongo/init-app-user.js:/docker-entrypoint-initdb.d/init-app-user.js:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    # El entrypoint oficial ajusta permisos de /data y cambia al usuario mongodb
+    cap_add: [CHOWN, SETUID, SETGID, DAC_OVERRIDE, FOWNER]
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping').ok"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Red interna: sin puertos publicados y sin salida a internet
+    networks: [db]
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  mosquitto:
+    <<: *hardening
+    image: eclipse-mosquitto:2.1-alpine
+    # UID/GID del usuario mosquitto de la imagen: no se ejecuta como root
+    user: '1883:1883'
+    ports:
+      - '1883:1883' # red local, sin TLS
+      - '8883:8883' # externo, TLS
+    volumes:
+      - ./docker/mosquitto/mosquitto.prod.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./docker/mosquitto/auth:/mosquitto/auth:ro
+      - ./docker/mosquitto/certs:/mosquitto/certs:ro
+      - mosquitto-data:/mosquitto/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    networks: [mqtt]
+    deploy:
+      resources:
+        limits:
+          memory: 128m
+
+networks:
+  edge:
+  mqtt:
+  db:
+    internal: true
+
+volumes:
+  letsencrypt:
+  certbot-www:
+  mongo-data:
+  mongo-config:
+  mosquitto-data:

@@ -1,0 +1,11 @@
+# Permisos por usuario de Mosquitto. Copia este archivo a docker/mosquitto/auth/acl
+# y ajústalo a los topics de tu proyecto (deben coincidir con `topic` de cada Device).
+# Un usuario sin reglas aquí no puede publicar ni suscribirse a nada.
+
+# Backend: lee las lecturas de todos los dispositivos (usuario = MQTT_USER de .env.production)
+user backend
+topic read planta/#
+
+# Un usuario por PLC, que solo puede publicar en su propio topic
+user plc-demo-001
+topic write planta/demo-001

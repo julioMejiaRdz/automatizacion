@@ -1,0 +1,40 @@
+# Servicios de infraestructura para DESARROLLO local.
+# El backend y el frontend se ejecutan fuera de Docker con `npm run dev`.
+#
+#   docker compose up -d      # levantar
+#   docker compose down       # detener (los datos se conservan en volúmenes)
+#   docker compose down -v    # detener y borrar los datos
+#
+# Los puertos se publican solo en 127.0.0.1 (no quedan expuestos a la red).
+
+name: automatizacion-dev
+
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:27017:27017'
+    volumes:
+      - mongo-data:/data/db
+
+  mosquitto:
+    image: eclipse-mosquitto:2.1-alpine
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:1883:1883'
+    volumes:
+      - ./docker/mosquitto/mosquitto.dev.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+
+  # Captura todos los correos que envía el backend. Bandeja web: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.33
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:1025:1025' # SMTP
+      - '127.0.0.1:8025:8025' # Interfaz web
+
+volumes:
+  mongo-data:
+  mosquitto-data:

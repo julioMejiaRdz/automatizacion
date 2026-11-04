@@ -1,0 +1,13 @@
+# Contexto de build de docker/nginx/Dockerfile (raíz del repo): solo necesita frontend/ y docker/nginx/
+**/node_modules
+**/dist
+**/coverage
+**/.env
+**/.env.*
+backend
+docker/mosquitto
+docker/mongo
+docker/certbot
+# Certificados propios de Nginx: se montan como volumen, nunca dentro de la imagen
+docker/nginx/certs
+.git

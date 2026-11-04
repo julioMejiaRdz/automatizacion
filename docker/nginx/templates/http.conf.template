@@ -1,0 +1,23 @@
+# Solo HTTP. Se usa en TLS_MODE=none (LAN) y, en TLS_MODE=letsencrypt, mientras certbot
+# obtiene el primer certificado (después se reemplaza automáticamente por https.conf.template).
+# Responde a cualquier nombre o IP con el que se acceda al servidor.
+
+include /etc/nginx/snippets/http-common.conf;
+
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    # Reto ACME de Let's Encrypt (solo se usa en TLS_MODE=letsencrypt)
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+    }
+
+    include /etc/nginx/snippets/app.conf;
+}

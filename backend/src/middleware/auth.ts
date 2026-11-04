@@ -1,37 +1,42 @@
-import { Request, Response, NextFunction } from "express"
-import jwt  from "jsonwebtoken"
-import User, { IUser } from "../models/User"
+import type { Request, Response, NextFunction } from 'express'
+import User, { type UserDocument } from '../models/User'
+import { verifyJWT } from '../utils/jwt'
 
 declare global {
-    namespace Express {
-        interface Request {
-            user?: IUser   
-        }
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Express {
+    interface Request {
+      user?: UserDocument
     }
+  }
 }
 
+/** Exige un JWT válido en `Authorization: Bearer <token>` y carga el usuario en `req.user`. */
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
-    const bearer = req.headers.authorization
-    if(!bearer) {
-        const error = new Error('No Autorizado')
-        return res.status(401).json({error: error.message})
-    }
-    const token = bearer.split(' ')[1]
-    
-    try{
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!)
+  const [scheme, token] = req.headers.authorization?.split(' ') ?? []
+  if (scheme !== 'Bearer' || !token) {
+    return res.status(401).json({ error: 'No autorizado' })
+  }
 
-        if(typeof decoded === 'object' && decoded.id) {
-            const user = await User.findById(decoded.id).select('_id name email')
-            if(user) {
-                req.user = user
-                next()
-            } else {
-                res.status(500).json({error: 'Token no Válido'})
-            }   
-        }
-        
-    }catch(error){
-        res.status(500).json({error: 'Token no Válido'})
+  const payload = verifyJWT(token)
+  if (!payload) {
+    return res.status(401).json({ error: 'Token no válido' })
+  }
+
+  try {
+    const user = await User.findById(payload.id).select('_id name email')
+    if (!user) {
+      return res.status(401).json({ error: 'Token no válido' })
     }
+    req.user = user
+    next()
+  } catch (error) {
+    next(error)
+  }
+}
+
+/** Para controladores detrás de `authenticate`: devuelve el usuario ya cargado. */
+export const getAuthUser = (req: Request): UserDocument => {
+  if (!req.user) throw new Error('authenticate no se ejecutó antes de este controlador')
+  return req.user
 }

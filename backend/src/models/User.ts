@@ -1,32 +1,17 @@
-import mongoose, {Schema, Document} from "mongoose";
+import mongoose, { Schema, type HydratedDocument, type InferSchemaType } from 'mongoose'
 
-export interface IUser extends Document {
-    email: string
-    password: string
-    name: string
-    confirmed: boolean
-}
+const userSchema = new Schema(
+  {
+    email: { type: String, required: true, lowercase: true, trim: true, unique: true },
+    password: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    confirmed: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+)
 
-const userSchema: Schema = new Schema({
-    email: {
-        type: String,
-        required: true,
-        lowercase: true,
-        unique: true
-    },
-    password: {
-        type: String,
-        required: true
-    },
-    name: {
-        type: String,
-        required: true
-    },
-    confirmed: {
-        type: Boolean,
-        default: false,
-    }
-})
+export type IUser = InferSchemaType<typeof userSchema>
+export type UserDocument = HydratedDocument<IUser>
 
-const User = mongoose.model<IUser>('User',userSchema)
+const User = mongoose.model('User', userSchema)
 export default User

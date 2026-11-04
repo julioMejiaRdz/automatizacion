@@ -1,59 +1,46 @@
-import { validateToken } from '@/api/AuthAPI';
-import type { ConfirmToken } from '@/types/index';
-import { PinInput, PinInputField } from '@chakra-ui/pin-input';
-import { useMutation } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { Link } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
+import { toast } from 'react-toastify'
+import { validateToken } from '@/api/AuthAPI'
+import CodeInput from '@/components/auth/CodeInput'
 
 type NewPasswordTokenProps = {
-    token: ConfirmToken['token'],
-    setToken: React.Dispatch<React.SetStateAction<string>>,
-    setIsValidToken: React.Dispatch<React.SetStateAction<boolean>>
+  token: string
+  setToken: (token: string) => void
+  onValid: () => void
 }
 
-export default function NewPasswordToken({token, setToken, setIsValidToken}: NewPasswordTokenProps) {
-    const handleChange = (token: ConfirmToken['token']) => setToken(token)
+export default function NewPasswordToken({ token, setToken, onValid }: NewPasswordTokenProps) {
+  const { mutate, isPending } = useMutation({
+    mutationFn: validateToken,
+    onError: (error) => {
+      toast.error(error.message)
+      setToken('')
+    },
+    onSuccess: (message) => {
+      toast.success(message)
+      onValid()
+    },
+  })
 
-    const {mutate} = useMutation({
-        mutationFn: validateToken,
-        onError: (error) => {
-            toast.error(error.message)
-        },
-        onSuccess: (data) => {
-            toast.success(data)
-            setIsValidToken(true)
-        }
-    })
-
-    const handleComplete = (token: ConfirmToken['token']) => mutate({token})
-
-    return (
-        <>
-            <form
-                className="space-y-8 p-10 rounded-lg bg-white mt-10"
-            >
-                <label
-                    className="font-normal text-2xl text-center block"
-                >Código de 6 dígitos</label>
-                <div className="flex justify-center gap-5">
-                    <PinInput value={token} onChange={handleChange} onComplete={handleComplete}>
-                        <PinInputField className="h-10 w-10 p-3 rounded-lg border-gray-300 border placeholder-white" />
-                        <PinInputField className="h-10 w-10 p-3 rounded-lg border-gray-300 border placeholder-white" />
-                        <PinInputField className="h-10 w-10 p-3 rounded-lg border-gray-300 border placeholder-white" />
-                        <PinInputField className="h-10 w-10 p-3 rounded-lg border-gray-300 border placeholder-white" />
-                        <PinInputField className="h-10 w-10 p-3 rounded-lg border-gray-300 border placeholder-white" />
-                        <PinInputField className="h-10 w-10 p-3 rounded-lg border-gray-300 border placeholder-white" />
-                    </PinInput>
-                </div>
-            </form>
-            <nav className="mt-10 flex flex-col space-y-4">
-                <Link
-                    to='/auth/forgot-password'
-                    className="text-center text-gray-300 font-normal"
-                >
-                    Solicitar un nuevo Código
-                </Link>
-            </nav>
-        </>
-    )
+  return (
+    <>
+      <div className="space-y-5">
+        <CodeInput
+          value={token}
+          onChange={setToken}
+          onComplete={(code) => mutate({ token: code })}
+          disabled={isPending}
+        />
+      </div>
+      <div className="mt-6 border-t border-slate-800 pt-6 text-center">
+        <Link
+          to="/auth/forgot-password"
+          className="text-xs text-slate-400 transition-colors hover:text-teal-400"
+        >
+          Solicitar un nuevo código
+        </Link>
+      </div>
+    </>
+  )
 }

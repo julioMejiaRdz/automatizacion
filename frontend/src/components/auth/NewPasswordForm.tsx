@@ -1,93 +1,77 @@
-import type { ConfirmToken, NewPasswordForm } from "../../types";
-import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
-import ErrorMessage from "@/components/ErrorMessage";
-import { updatePasswordWithToken } from "@/api/AuthAPI";
-import { toast } from "react-toastify";
+import { useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { useMutation } from '@tanstack/react-query'
+import { toast } from 'react-toastify'
+import { updatePasswordWithToken } from '@/api/AuthAPI'
+import ErrorMessage from '@/components/ErrorMessage'
+import { authButtonClass, authInputClass, authLabelClass } from '@/components/auth/styles'
+import type { ConfirmToken, NewPasswordForm as NewPasswordFormData } from '@/types/index'
 
+export default function NewPasswordForm({ token }: ConfirmToken) {
+  const navigate = useNavigate()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<NewPasswordFormData>({ defaultValues: { password: '', password_confirmation: '' } })
 
-export default function NewPasswordForm({token}: ConfirmToken) {
-    const navigate = useNavigate()
-    const initialValues: NewPasswordForm = {
-        password: '',
-        password_confirmation: '',
-    }
-    const { register, handleSubmit, watch, reset, formState: { errors } } = useForm({ defaultValues: initialValues });
+  const { mutate, isPending } = useMutation({
+    mutationFn: updatePasswordWithToken,
+    onError: (error) => toast.error(error.message),
+    onSuccess: (message) => {
+      toast.success(message)
+      navigate('/auth/login')
+    },
+  })
 
-    const {mutate} = useMutation({
-        mutationFn: updatePasswordWithToken,
-        onError: (error) => {
-            toast.error(error.message)
-        },
-        onSuccess: (data) => {
-            toast.success(data)
-            reset()
-            navigate('/auth/login')
-        }
-    })
+  return (
+    <form
+      onSubmit={handleSubmit((formData) => mutate({ formData, token }))}
+      className="space-y-5"
+      noValidate
+    >
+      <div className="space-y-1.5">
+        <label htmlFor="password" className={authLabelClass}>
+          Nueva contraseña
+        </label>
+        <input
+          id="password"
+          type="password"
+          placeholder="Mínimo 8 caracteres"
+          autoComplete="new-password"
+          className={authInputClass}
+          {...register('password', {
+            required: 'La contraseña es obligatoria',
+            minLength: { value: 8, message: 'Mínimo 8 caracteres' },
+          })}
+        />
+        {errors.password && <ErrorMessage>{errors.password.message}</ErrorMessage>}
+      </div>
 
-    const handleNewPassword = (formData: NewPasswordForm) => mutate({formData, token})
+      <div className="space-y-1.5">
+        <label htmlFor="password_confirmation" className={authLabelClass}>
+          Confirmar contraseña
+        </label>
+        <input
+          id="password_confirmation"
+          type="password"
+          placeholder="••••••••"
+          autoComplete="new-password"
+          className={authInputClass}
+          {...register('password_confirmation', {
+            required: 'Confirma tu contraseña',
+            validate: (value, values) =>
+              value === values.password || 'Las contraseñas no coinciden',
+          })}
+        />
+        {errors.password_confirmation && (
+          <ErrorMessage>{errors.password_confirmation.message}</ErrorMessage>
+        )}
+      </div>
 
-    const password = watch('password');
-
-    return (
-        <>
-            <form
-                onSubmit={handleSubmit(handleNewPassword)}
-                className="space-y-8 p-10  bg-white mt-10"
-                noValidate
-            >
-
-                <div className="flex flex-col gap-5">
-                    <label
-                        className="font-normal text-2xl"
-                    >Password</label>
-
-                    <input
-                        type="password"
-                        placeholder="Password de Registro"
-                        className="w-full p-3  border-gray-300 border"
-                        {...register("password", {
-                            required: "El Password es obligatorio",
-                            minLength: {
-                                value: 8,
-                                message: 'El Password debe ser mínimo de 8 caracteres'
-                            }
-                        })}
-                    />
-                    {errors.password && (
-                        <ErrorMessage>{errors.password.message}</ErrorMessage>
-                    )}
-                </div>
-
-                <div className="flex flex-col gap-5">
-                    <label
-                        className="font-normal text-2xl"
-                    >Repetir Password</label>
-
-                    <input
-                        id="password_confirmation"
-                        type="password"
-                        placeholder="Repite Password de Registro"
-                        className="w-full p-3  border-gray-300 border"
-                        {...register("password_confirmation", {
-                            required: "Repetir Password es obligatorio",
-                            validate: value => value === password || 'Los Passwords no son iguales'
-                        })}
-                    />
-
-                    {errors.password_confirmation && (
-                        <ErrorMessage>{errors.password_confirmation.message}</ErrorMessage>
-                    )}
-                </div>
-
-                <input
-                    type="submit"
-                    value='Establecer Password'
-                    className="bg-fuchsia-600 hover:bg-fuchsia-700 w-full p-3  text-white font-black  text-xl cursor-pointer"
-                />
-            </form>
-        </>
-    )
+      <button type="submit" disabled={isPending} className={authButtonClass}>
+        {isPending ? 'Guardando...' : 'Establecer contraseña'}
+      </button>
+    </form>
+  )
 }

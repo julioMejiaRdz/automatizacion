@@ -1,19 +1,18 @@
-import * as React from "react"
+import { useSyncExternalStore } from 'react'
 
+// Usado por el sidebar de shadcn/ui. Reescrito con useSyncExternalStore para no llamar
+// setState dentro de un efecto (regla react-hooks/set-state-in-effect).
 const MOBILE_BREAKPOINT = 768
+const query = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`
+
+const subscribe = (onChange: () => void) => {
+  const mql = window.matchMedia(query)
+  mql.addEventListener('change', onChange)
+  return () => mql.removeEventListener('change', onChange)
+}
+
+const getSnapshot = () => window.matchMedia(query).matches
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
-
-  React.useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    }
-    mql.addEventListener("change", onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    return () => mql.removeEventListener("change", onChange)
-  }, [])
-
-  return !!isMobile
+  return useSyncExternalStore(subscribe, getSnapshot)
 }

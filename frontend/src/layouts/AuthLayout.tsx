@@ -1,19 +1,20 @@
-import { Navigate, Outlet } from "react-router-dom";
-import { BorderBeam } from "@/components/ui/border-beam";
-import { useAuth } from "@/hooks/useAuth";
+import { Suspense } from 'react'
+import { Navigate, Outlet } from 'react-router-dom'
+import { BorderBeam } from '@/components/ui/border-beam'
+import { useAuth } from '@/hooks/useAuth'
+import { APP_NAME } from '@/lib/config'
 
 export default function AuthLayout() {
-  const { isError, isLoading } = useAuth();
+  const { isError, isLoading } = useAuth()
 
-  if (isLoading) return "Cargando..";
+  if (isLoading) return <p className="p-6 text-muted-foreground">Cargando...</p>
 
   if (!isError) {
-    return <Navigate to="/" />;
+    return <Navigate to="/" />
   }
 
   return (
     <div className="relative min-h-screen bg-black flex items-center justify-center p-4 overflow-hidden">
-
       <svg
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -50,9 +51,9 @@ export default function AuthLayout() {
           <path d="M 0 154 Q 355.5 -100 711 400 Q 1066.5 900 1422 154" />
           <path d="M 0 132 Q 355.5 -100 711 400 Q 1066.5 900 1422 132" />
           <path d="M 0 110 Q 355.5 -100 711 400 Q 1066.5 900 1422 110" />
-          <path d="M 0 88 Q 355.5 -100 711 400 Q 1066.5 900 1422 88"  />
-          <path d="M 0 66 Q 355.5 -100 711 400 Q 1066.5 900 1422 66"  />
-          <path d="M 0 44 Q 355.5 -100 711 400 Q 1066.5 900 1422 44"  />
+          <path d="M 0 88 Q 355.5 -100 711 400 Q 1066.5 900 1422 88" />
+          <path d="M 0 66 Q 355.5 -100 711 400 Q 1066.5 900 1422 66" />
+          <path d="M 0 44 Q 355.5 -100 711 400 Q 1066.5 900 1422 44" />
         </g>
       </svg>
 
@@ -67,14 +68,15 @@ export default function AuthLayout() {
             colorTo="#0f766e"
             borderWidth={2}
           />
-          <Outlet />
+          <Suspense fallback={null}>
+            <Outlet />
+          </Suspense>
         </div>
 
         <p className="text-center text-slate-500 text-xs mt-6 font-mono">
-          Proyectos Automatización COMPRES {new Date().getFullYear()}
+          {APP_NAME} · {new Date().getFullYear()}
         </p>
       </div>
-
     </div>
-  );
+  )
 }

@@ -1,118 +1,78 @@
-import { isAxiosError } from "axios";
-import { userSchema, type CheckPasswordForm, type ConfirmToken, type ForgotPasswordForm, type NewPasswordForm, type RequestConfirmationCodeForm, type UserLoginForm, type UserRegistrationForm } from "../types";
-import api from "@/lib/axios";
+import api from '@/lib/axios'
+import { AUTH_TOKEN_KEY } from '@/lib/config'
+import { toApiError } from './errors'
+import {
+  userSchema,
+  type CheckPasswordForm,
+  type ConfirmToken,
+  type ForgotPasswordForm,
+  type NewPasswordForm,
+  type RequestConfirmationCodeForm,
+  type UpdateCurrentUserPasswordForm,
+  type UserLoginForm,
+  type UserProfileForm,
+  type UserRegistrationForm,
+} from '@/types/index'
 
-
-export async function createAccount(formData: UserRegistrationForm) {
-    try {
-        const url = '/auth/create-account'
-        const {data} = await api.post<string>(url,formData)
-        return data
-    }catch(error) {
-        if(isAxiosError(error) && error.response){
-            throw new Error(error.response.data.error)
-        }
-    }
+/** POST que devuelve el mensaje de texto del backend o lanza un Error con su mensaje. */
+const postMessage = async (url: string, body: unknown) => {
+  try {
+    const { data } = await api.post<string>(url, body)
+    return data
+  } catch (error) {
+    throw toApiError(error)
+  }
 }
 
-export async function confirmAccount(formData: ConfirmToken) {
-    try{
-        const url = '/auth/confirm-account'
-        const {data} = await api.post<string>(url,formData)
-        return data
-    }catch(error){
-        if(isAxiosError(error) && error.response){
-            throw new Error(error.response.data.error)
-        }
-    }
-}
+export const createAccount = (formData: UserRegistrationForm) =>
+  postMessage('/auth/create-account', formData)
 
-export async function requestConfirmationCode(formData: RequestConfirmationCodeForm) {
-    try{
-        const url = '/auth/request-code'
-        const {data} = await api.post<string>(url,formData)
-        return data
-    }catch(error){
-        if(isAxiosError(error) && error.response){
-            throw new Error(error.response.data.error)
-        }
-    }
-}
+export const confirmAccount = (formData: ConfirmToken) =>
+  postMessage('/auth/confirm-account', formData)
+
+export const requestConfirmationCode = (formData: RequestConfirmationCodeForm) =>
+  postMessage('/auth/request-code', formData)
+
+export const forgotPassword = (formData: ForgotPasswordForm) =>
+  postMessage('/auth/forgot-password', formData)
+
+export const validateToken = (formData: ConfirmToken) =>
+  postMessage('/auth/validate-token', formData)
+
+export const updatePasswordWithToken = ({
+  formData,
+  token,
+}: {
+  formData: NewPasswordForm
+  token: ConfirmToken['token']
+}) => postMessage(`/auth/update-password/${token}`, formData)
+
+export const checkPassword = (formData: CheckPasswordForm) =>
+  postMessage('/auth/check-password', formData)
+
+export const updateCurrentUserPassword = (formData: UpdateCurrentUserPasswordForm) =>
+  postMessage('/auth/update-password', formData)
 
 export async function login(formData: UserLoginForm) {
-    try{
-        const url = '/auth/login'
-        const {data} = await api.post<string>(url,formData)
-        localStorage.setItem('AUTH_TOKEN', data)
-        return data
-    }catch(error){
-        if(isAxiosError(error) && error.response){
-            throw new Error(error.response.data.error)
-        }
-    }
+  const token = await postMessage('/auth/login', formData)
+  localStorage.setItem(AUTH_TOKEN_KEY, token)
+  return token
 }
 
-export async function forgotPassword(formData: ForgotPasswordForm) {
-    try{
-        const url = '/auth/forgot-password'
-        const {data} = await api.post<string>(url,formData)
-        return data
-    }catch(error){
-        if(isAxiosError(error) && error.response){
-            throw new Error(error.response.data.error)
-        }
-    }
+export async function getUser() {
+  try {
+    const { data } = await api.get('/auth/user')
+    return userSchema.parse(data)
+  } catch (error) {
+    throw toApiError(error)
+  }
 }
 
-
-export async function validateToken(formData:ConfirmToken) {
-    try {
-        const url = '/auth/validate-token'
-        const {data} = await api.post(url, formData)
-        return data
-    }catch(error){
-        if(isAxiosError(error) && error.response){
-            throw new Error(error.response.data.error)
-        }
-    }
-    
-}
-
-export async function updatePasswordWithToken({formData, token}:{formData: NewPasswordForm, token: ConfirmToken['token']}) {
-    try {
-        const url = `/auth/update-password/${token}`
-        const {data} = await api.post(url, formData)
-        return data
-    }catch(error) {
-        if(isAxiosError(error) && error.response){
-            throw new Error(error.response.data.error)
-        }
-    } 
-}
-
-export async function getUser () {
-    try{
-        const url = '/auth/user'
-        const {data} = await api(url)
-        const response = userSchema.safeParse(data)
-        if(response.success){
-            return response.data
-        }
-    }catch(error) {
-        if(isAxiosError(error) && error.response){
-            throw new Error(error.response.data.error)
-        }
-    }
-}
-
-export async function checkPassword(formData: CheckPasswordForm) {
-    try {
-        const url = 'auth/check-password'
-        const {data} = await api.post<string>(url, formData)
-        return data
-    } catch(error) {
-        if(isAxiosError(error) && error.response) {
-            throw new Error(error.response.data.error)
-        }
-    } 
+export async function updateProfile(formData: UserProfileForm) {
+  try {
+    const { data } = await api.put<string>('/auth/profile', formData)
+    return data
+  } catch (error) {
+    throw toApiError(error)
+  }
 }

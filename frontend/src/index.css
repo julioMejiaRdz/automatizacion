@@ -7,6 +7,10 @@
 @custom-variant short (@media (max-height: 800px));
 
 @theme inline {
+  /* Tipografía: Inter para la interfaz y el texto, Plus Jakarta Sans para títulos (font-heading) */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-heading:
+    'Plus Jakarta Sans Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -140,6 +144,14 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* Títulos y subtítulos con la fuente de títulos (incluye CardTitle de shadcn) */
+  h1,
+  h2,
+  h3,
+  h4,
+  [data-slot='card-title'] {
+    font-family: var(--font-heading);
   }
 }
 

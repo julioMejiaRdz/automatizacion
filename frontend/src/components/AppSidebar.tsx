@@ -49,7 +49,7 @@ export default function AppSidebar({ user }: { user?: User }) {
                   <AppLogo className="size-full" iconClassName="size-6 text-brand" />
                 </div>
                 <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate text-base font-semibold" title={APP_NAME}>
+                  <span className="truncate font-heading text-base font-semibold" title={APP_NAME}>
                     {APP_NAME}
                   </span>
                   <span className="truncate text-xs text-sidebar-foreground/75">

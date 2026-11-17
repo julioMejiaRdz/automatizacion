@@ -144,7 +144,7 @@ Los códigos de confirmación y de recuperación expiran a los 10 minutos (índi
 │   ├── public/            favicon · theme-init.js (tema antes de pintar)
 │   └── src/
 │       ├── api/           AuthAPI · DeviceAPI · errors
-│       ├── components/    AppSidebar · NavUser · auth/ · devices/ · ui/ (shadcn)
+│       ├── components/    AppSidebar · AppLogo · NavUser · auth/ (piezas de formulario) · devices/ · ui/ (shadcn)
 │       ├── context/       SocketContext · SocketProvider
 │       ├── hooks/         useAuth · useDeviceReadings · useLogout · useTheme
 │       ├── layouts/       AppLayout (sidebar) · AuthLayout
@@ -248,17 +248,21 @@ Cada proyecto tiene además sus propios scripts (`npm run <script> --prefix back
 
 `frontend/.env.local` (se incrustan en el build):
 
-| Variable        | Descripción                                              |
-| --------------- | -------------------------------------------------------- |
-| `VITE_APP_NAME` | Nombre en el login, el sidebar y el título de la pestaña |
-| `VITE_API_URL`  | URL de la API, incluye `/api`                            |
-| `VITE_WS_URL`   | URL de Socket.IO; vacía = mismo origen que el frontend   |
+| Variable               | Descripción                                                                                                                            |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_APP_NAME`        | Nombre en el login, el sidebar y el título de la pestaña                                                                               |
+| `VITE_APP_DESCRIPTION` | Descripción bajo el nombre en el login (por defecto "Monitoreo en tiempo real")                                                        |
+| `VITE_APP_LOGO`        | Ruta del logo del cliente dentro de `frontend/public` (p. ej. `/logo.svg`); vacío = icono genérico                                     |
+| `VITE_BRAND_COLOR`     | Color de marca (cualquier color CSS); vacío = azul. Los hex van entre comillas (`"#185fa5"`): sin ellas el `#` se toma como comentario |
+| `VITE_FOOTER_TEXT`     | Pie del login; `{year}` se reemplaza por el año; vacío = sin pie                                                                       |
+| `VITE_API_URL`         | URL de la API, incluye `/api`                                                                                                          |
+| `VITE_WS_URL`          | URL de Socket.IO; vacía = mismo origen que el frontend                                                                                 |
 
 ---
 
 ## Adaptar la plantilla a un proyecto nuevo
 
-1. Cambia `VITE_APP_NAME` (y `APP_NAME` en producción) y el remitente `MAIL_FROM`.
+1. Personaliza la marca en `frontend/.env.local` (y su equivalente sin `VITE_` en `.env.production`): nombre (`VITE_APP_NAME`), descripción, color (`VITE_BRAND_COLOR="#185fa5"`, con comillas) y pie del login. Para el logo, copia el archivo a `frontend/public/` (por ejemplo `logo.svg`) y pon su ruta en `VITE_APP_LOGO=/logo.svg`. El logo se muestra sobre un fondo blanco en el login y en el sidebar; SVG o PNG con fondo transparente funcionan mejor. Cambia también el remitente `MAIL_FROM` del backend.
 2. Define tus dispositivos en `backend/src/scripts/seed.ts` o con la API, y haz que los PLC publiquen en el formato de payload descrito arriba.
 3. Agrega vistas en `frontend/src/views/`, su ruta en `router.tsx` y su entrada en `NAV_ITEMS` de `components/AppSidebar.tsx`.
 4. Agrega componentes de shadcn/ui con `npx shadcn add <componente>` dentro de `frontend/` (quedan en `components/ui/`).

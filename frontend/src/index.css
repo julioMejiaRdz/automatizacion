@@ -147,7 +147,7 @@
   mix-blend-mode: normal;
 }
 
-/* Indicadores de carga (PageLoader, ViewSkeleton, DeviceCardSkeleton) */
+/* Indicadores de carga (Loader, ViewSkeleton, DeviceCardSkeleton) */
 
 /* Aparece tras 200 ms: si la carga es casi instantánea (LAN) no llega a verse y no hay parpadeo */
 @utility animate-delayed-in {
@@ -160,7 +160,7 @@
   }
 }
 
-/* Loader de señal (PageLoader): 5 barras crecientes del color de marca que se encienden en onda */
+/* Loader de señal (Loader): 5 barras crecientes del color de marca que se encienden en onda */
 .signal-loader {
   display: flex;
   align-items: flex-end;

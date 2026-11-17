@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import AppLogo from '@/components/AppLogo'
-import PageLoader from '@/components/loading/PageLoader'
+import Loader from '@/components/loading/Loader'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { useAuth } from '@/hooks/useAuth'
 import { APP_DESCRIPTION, APP_NAME, FOOTER_TEXT } from '@/lib/config'
@@ -17,8 +17,8 @@ import { APP_DESCRIPTION, APP_NAME, FOOTER_TEXT } from '@/lib/config'
 export default function AuthLayout() {
   const { isError, isLoading } = useAuth()
 
-  if (isLoading) return <PageLoader />
-  if (!isError) return <Navigate to="/" />
+  // Con sesión válida no tiene sentido el login: al dashboard
+  if (!isLoading && !isError) return <Navigate to="/" />
 
   return (
     <div className="relative flex min-h-dvh items-center justify-center overflow-x-hidden bg-muted p-4 md:overflow-hidden md:px-8 md:py-6 dark:bg-background">
@@ -95,9 +95,14 @@ export default function AuthLayout() {
 
         {/* Tarjeta del formulario (siempre clara) */}
         <section className="theme-light relative overflow-hidden rounded-3xl bg-card p-8 text-card-foreground shadow-2xl md:absolute md:top-1/2 md:left-0 md:w-[51%] md:-translate-y-1/2 md:px-10 md:py-9 short:md:px-8 short:md:py-6">
-          <Suspense fallback={null}>
-            <Outlet />
-          </Suspense>
+          {/* Mientras se valida la sesión o se descarga la vista, el loader va dentro de la tarjeta */}
+          {isLoading ? (
+            <Loader className="min-h-72" />
+          ) : (
+            <Suspense fallback={<Loader className="min-h-72" />}>
+              <Outlet />
+            </Suspense>
+          )}
         </section>
       </div>
 

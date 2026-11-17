@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 /** Alto (px) y retraso de la animación (s) de cada barra, de menor a mayor. */
 const BARS = [6, 11, 16, 22, 28].map((height, i) => ({ height, delay: i * 0.12 }))
@@ -10,11 +11,18 @@ const MESSAGES = [
   { after: 15_000, text: 'Está tardando más de lo normal. Revisa tu conexión' },
 ]
 
+type LoaderProps = {
+  /** Ocupa toda la pantalla (solo si aún no hay layout que mostrar). */
+  fullScreen?: boolean
+  className?: string
+}
+
 /**
- * Pantalla completa de carga: se muestra mientras se descarga la app (layouts lazy) y mientras
- * se valida la sesión. Aparece con 200 ms de retraso para no parpadear en cargas rápidas.
+ * Indicador de carga con el loader de señal. Por defecto se centra en el espacio de su contenedor:
+ * el área de contenido de AppLayout (mientras se valida la sesión) o la tarjeta del login.
+ * Aparece con 200 ms de retraso para no parpadear en cargas rápidas.
  */
-export default function PageLoader() {
+export default function Loader({ fullScreen = false, className }: LoaderProps) {
   const [step, setStep] = useState(0)
 
   useEffect(() => {
@@ -25,7 +33,11 @@ export default function PageLoader() {
   return (
     <div
       role="status"
-      className="flex min-h-dvh animate-delayed-in flex-col items-center justify-center gap-4 bg-background px-6"
+      className={cn(
+        'flex animate-delayed-in flex-col items-center justify-center gap-4 px-6',
+        fullScreen ? 'min-h-dvh bg-background' : 'h-full min-h-[60vh]',
+        className,
+      )}
     >
       <div className="signal-loader" aria-hidden="true">
         {BARS.map(({ height, delay }) => (

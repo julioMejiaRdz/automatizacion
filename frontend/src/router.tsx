@@ -2,12 +2,14 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/ReactToastify.css'
-import PageLoader from '@/components/loading/PageLoader'
+import Loader from '@/components/loading/Loader'
 import { useTheme } from '@/hooks/useTheme'
 
-// Layouts y vistas se cargan bajo demanda (code splitting) para reducir el bundle inicial
-const AppLayout = lazy(() => import('@/layouts/AppLayout'))
-const AuthLayout = lazy(() => import('@/layouts/AuthLayout'))
+import AppLayout from '@/layouts/AppLayout'
+import AuthLayout from '@/layouts/AuthLayout'
+
+// Los layouts van en el bundle inicial para pintar el marco (sidebar, panel de marca) al instante;
+// las vistas se cargan bajo demanda (code splitting) y muestran su indicador dentro del layout
 const DashboardView = lazy(() => import('@/views/DashboardView'))
 const ProfileView = lazy(() => import('@/views/ProfileView'))
 const LoginView = lazy(() => import('@/views/auth/LoginView'))
@@ -22,7 +24,7 @@ export default function Router() {
 
   return (
     <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<Loader fullScreen />}>
         <Routes>
           {/* Vistas autenticadas (sidebar + socket conectado) */}
           <Route element={<AppLayout />}>

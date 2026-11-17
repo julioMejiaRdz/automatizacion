@@ -14,6 +14,7 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 import AppLogo from '@/components/AppLogo'
+import { Skeleton } from '@/components/ui/skeleton'
 import NavUser from '@/components/NavUser'
 import type { User } from '@/types/index'
 
@@ -25,7 +26,8 @@ const NAV_ITEMS: NavItem[] = [
   { title: 'Mi perfil', to: '/profile', icon: UserRound },
 ]
 
-export default function AppSidebar({ user }: { user: User }) {
+/** Sin `user` (sesión validándose) el pie muestra un esqueleto en lugar del usuario. */
+export default function AppSidebar({ user }: { user?: User }) {
   const { pathname } = useLocation()
 
   return (
@@ -65,7 +67,17 @@ export default function AppSidebar({ user }: { user: User }) {
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser user={user} />
+        {user ? (
+          <NavUser user={user} />
+        ) : (
+          <div className="flex h-12 items-center gap-2 px-2" aria-hidden="true">
+            <Skeleton className="size-8 shrink-0 rounded-lg motion-reduce:animate-none" />
+            <div className="grid flex-1 gap-1.5 group-data-[collapsible=icon]:hidden">
+              <Skeleton className="h-3.5 w-3/4 motion-reduce:animate-none" />
+              <Skeleton className="h-3 w-1/2 motion-reduce:animate-none" />
+            </div>
+          </div>
+        )}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

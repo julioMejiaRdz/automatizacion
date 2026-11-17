@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AuthHeader } from '@/components/auth/AuthForm'
 import NewPasswordToken from '@/components/auth/NewPasswordToken'
 import NewPasswordForm from '@/components/auth/NewPasswordForm'
 
@@ -8,14 +9,14 @@ export default function NewPasswordView() {
 
   return (
     <>
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-white">Restablecer contraseña</h2>
-        <p className="mt-1 text-sm text-slate-300">
-          {isValidToken
+      <AuthHeader
+        title="Restablecer contraseña"
+        description={
+          isValidToken
             ? 'Define tu nueva contraseña'
-            : 'Ingresa el código de 6 dígitos que recibiste por email'}
-        </p>
-      </div>
+            : 'Ingresa el código de 6 dígitos que recibiste por email'
+        }
+      />
 
       {isValidToken ? (
         <NewPasswordForm token={token} />

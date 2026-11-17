@@ -3,8 +3,7 @@ import { useForm } from 'react-hook-form'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
 import { updatePasswordWithToken } from '@/api/AuthAPI'
-import ErrorMessage from '@/components/ErrorMessage'
-import { authButtonClass, authInputClass, authLabelClass } from '@/components/auth/styles'
+import { AuthButton, PasswordField } from '@/components/auth/AuthForm'
 import type { ConfirmToken, NewPasswordForm as NewPasswordFormData } from '@/types/index'
 
 export default function NewPasswordForm({ token }: ConfirmToken) {
@@ -27,51 +26,34 @@ export default function NewPasswordForm({ token }: ConfirmToken) {
   return (
     <form
       onSubmit={handleSubmit((formData) => mutate({ formData, token }))}
-      className="space-y-5"
+      className="space-y-4 short:space-y-3"
       noValidate
     >
-      <div className="space-y-1.5">
-        <label htmlFor="password" className={authLabelClass}>
-          Nueva contraseña
-        </label>
-        <input
-          id="password"
-          type="password"
-          placeholder="Mínimo 8 caracteres"
-          autoComplete="new-password"
-          className={authInputClass}
-          {...register('password', {
-            required: 'La contraseña es obligatoria',
-            minLength: { value: 8, message: 'Mínimo 8 caracteres' },
-          })}
-        />
-        {errors.password && <ErrorMessage>{errors.password.message}</ErrorMessage>}
-      </div>
-
-      <div className="space-y-1.5">
-        <label htmlFor="password_confirmation" className={authLabelClass}>
-          Confirmar contraseña
-        </label>
-        <input
-          id="password_confirmation"
-          type="password"
-          placeholder="••••••••"
-          autoComplete="new-password"
-          className={authInputClass}
-          {...register('password_confirmation', {
-            required: 'Confirma tu contraseña',
-            validate: (value, values) =>
-              value === values.password || 'Las contraseñas no coinciden',
-          })}
-        />
-        {errors.password_confirmation && (
-          <ErrorMessage>{errors.password_confirmation.message}</ErrorMessage>
-        )}
-      </div>
-
-      <button type="submit" disabled={isPending} className={authButtonClass}>
+      <PasswordField
+        id="password"
+        label="Nueva contraseña"
+        placeholder="Mínimo 8 caracteres"
+        autoComplete="new-password"
+        error={errors.password?.message}
+        {...register('password', {
+          required: 'La contraseña es obligatoria',
+          minLength: { value: 8, message: 'Mínimo 8 caracteres' },
+        })}
+      />
+      <PasswordField
+        id="password_confirmation"
+        label="Confirmar contraseña"
+        placeholder="Repite la contraseña"
+        autoComplete="new-password"
+        error={errors.password_confirmation?.message}
+        {...register('password_confirmation', {
+          required: 'Confirma tu contraseña',
+          validate: (value, values) => value === values.password || 'Las contraseñas no coinciden',
+        })}
+      />
+      <AuthButton type="submit" loading={isPending}>
         {isPending ? 'Guardando...' : 'Establecer contraseña'}
-      </button>
+      </AuthButton>
     </form>
   )
 }

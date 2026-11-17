@@ -2,7 +2,7 @@ import type React from 'react'
 
 export default function ErrorMessage({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1.5 text-red-400 text-xs mt-1">
+    <div className="flex items-center gap-1.5 text-destructive text-xs mt-1">
       <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
         <path
           fillRule="evenodd"

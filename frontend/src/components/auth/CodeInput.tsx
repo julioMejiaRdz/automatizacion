@@ -26,7 +26,7 @@ export default function CodeInput({ value, onChange, onComplete, disabled }: Cod
           <InputOTPSlot
             key={i}
             index={i}
-            className="h-12 w-11 rounded-lg border border-slate-700 bg-slate-800 font-mono text-lg text-white first:rounded-lg last:rounded-lg data-[active=true]:border-teal-500 data-[active=true]:ring-teal-500/50"
+            className="h-12 w-11 rounded-lg border bg-muted/60 font-mono text-lg text-foreground first:rounded-lg last:rounded-lg data-[active=true]:border-brand data-[active=true]:ring-brand/20"
           />
         ))}
       </InputOTPGroup>

@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { Activity, LayoutDashboard, UserRound, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, UserRound, type LucideIcon } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -13,8 +13,8 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
+import AppLogo from '@/components/AppLogo'
 import NavUser from '@/components/NavUser'
-import { APP_NAME } from '@/lib/config'
 import type { User } from '@/types/index'
 
 type NavItem = { title: string; to: string; icon: LucideIcon }
@@ -35,10 +35,9 @@ export default function AppSidebar({ user }: { user: User }) {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <NavLink to="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-teal-600 text-white">
-                  <Activity className="size-4" />
+                <div className="flex aspect-square size-17 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-white p-0.5">
+                  <AppLogo className="size-full" iconClassName="size-8 text-brand" />
                 </div>
-                <span className="truncate font-semibold">{APP_NAME}</span>
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>

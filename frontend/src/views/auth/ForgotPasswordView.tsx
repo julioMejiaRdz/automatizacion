@@ -1,74 +1,66 @@
-import {
-  authButtonClass,
-  authInputClass,
-  authLabelClass,
-  authLinkClass,
-} from '@/components/auth/styles'
 import { useForm } from 'react-hook-form'
-import { Link } from 'react-router-dom'
-import type { ForgotPasswordForm } from '@/types/index'
 import { useMutation } from '@tanstack/react-query'
-import ErrorMessage from '@/components/ErrorMessage'
-import { forgotPassword } from '@/api/AuthAPI'
 import { toast } from 'react-toastify'
+import { Mail } from 'lucide-react'
+import { forgotPassword } from '@/api/AuthAPI'
+import { AuthButton, AuthField, AuthFooter, AuthHeader, AuthLink } from '@/components/auth/AuthForm'
+import type { ForgotPasswordForm } from '@/types/index'
 
 export default function ForgotPasswordView() {
-  const initialValues: ForgotPasswordForm = { email: '' }
-
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm({ defaultValues: initialValues })
+  } = useForm<ForgotPasswordForm>({ defaultValues: { email: '' } })
 
   const { mutate, isPending } = useMutation({
     mutationFn: forgotPassword,
     onError: (error) => toast.error(error.message),
-    onSuccess: (data) => {
-      toast.success(data)
+    onSuccess: (message) => {
+      toast.success(message)
       reset()
     },
   })
 
-  const handleForgotPassword = (formData: ForgotPasswordForm) => mutate(formData)
-
   return (
     <>
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-white">Restablecer contraseña</h2>
-        <p className="text-slate-300 text-sm mt-1">Te enviaremos las instrucciones por email</p>
-      </div>
+      <AuthHeader
+        title="Restablecer contraseña"
+        description="Te enviaremos un código por email para crear una nueva"
+      />
 
-      <form onSubmit={handleSubmit(handleForgotPassword)} className="space-y-5" noValidate>
-        <div className="space-y-1.5">
-          <label className={authLabelClass}>Email</label>
-          <input
-            id="email"
-            type="email"
-            placeholder="usuario@empresa.com"
-            className={authInputClass}
-            {...register('email', {
-              required: 'El email es obligatorio',
-              pattern: { value: /\S+@\S+\.\S+/, message: 'Email no válido' },
-            })}
-          />
-          {errors.email && <ErrorMessage>{errors.email.message}</ErrorMessage>}
-        </div>
-
-        <button type="submit" disabled={isPending} className={authButtonClass}>
-          {isPending ? 'Enviando...' : 'Enviar instrucciones'}
-        </button>
+      <form
+        onSubmit={handleSubmit((data) => mutate(data))}
+        className="space-y-4 short:space-y-3"
+        noValidate
+      >
+        <AuthField
+          id="email"
+          label="Email"
+          type="email"
+          icon={Mail}
+          placeholder="usuario@dominio.com"
+          autoComplete="email"
+          error={errors.email?.message}
+          {...register('email', {
+            required: 'El email es obligatorio',
+            pattern: { value: /\S+@\S+\.\S+/, message: 'Email no válido' },
+          })}
+        />
+        <AuthButton type="submit" loading={isPending}>
+          {isPending ? 'Enviando...' : 'Enviar código'}
+        </AuthButton>
       </form>
 
-      <div className="mt-6 pt-6 border-t border-slate-800 flex flex-col gap-2 text-center">
-        <Link to="/auth/login" className={authLinkClass}>
-          ¿Ya tienes cuenta? Iniciar sesión
-        </Link>
-        <Link to="/auth/register" className={authLinkClass}>
-          ¿Sin cuenta? Registrarse
-        </Link>
-      </div>
+      <AuthFooter>
+        <span>
+          ¿Ya tienes el código? <AuthLink to="/auth/new-password">Ingrésalo aquí</AuthLink>
+        </span>
+        <span>
+          <AuthLink to="/auth/login">Volver a iniciar sesión</AuthLink>
+        </span>
+      </AuthFooter>
     </>
   )
 }

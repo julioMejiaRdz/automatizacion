@@ -26,7 +26,9 @@ export default function NavUser({ user }: { user: User }) {
   const userInfo = (
     <>
       <Avatar className="size-8 rounded-lg">
-        <AvatarFallback className="rounded-lg bg-teal-600 text-white">{initial}</AvatarFallback>
+        <AvatarFallback className="rounded-lg bg-brand text-brand-foreground">
+          {initial}
+        </AvatarFallback>
       </Avatar>
       <div className="grid flex-1 text-left text-sm leading-tight">
         <span className="truncate font-medium">{user.name}</span>

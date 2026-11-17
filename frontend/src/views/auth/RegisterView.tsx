@@ -1,117 +1,101 @@
-import {
-  authButtonClass,
-  authInputClass,
-  authLabelClass,
-  authLinkClass,
-} from '@/components/auth/styles'
 import { useForm } from 'react-hook-form'
-import type { UserRegistrationForm } from '@/types/index'
-import ErrorMessage from '@/components/ErrorMessage'
-import { Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { createAccount } from '@/api/AuthAPI'
 import { toast } from 'react-toastify'
+import { Mail, UserRound } from 'lucide-react'
+import { createAccount } from '@/api/AuthAPI'
+import {
+  AuthButton,
+  AuthField,
+  AuthFooter,
+  AuthHeader,
+  AuthLink,
+  PasswordField,
+} from '@/components/auth/AuthForm'
+import type { UserRegistrationForm } from '@/types/index'
 
 export default function RegisterView() {
-  const initialValues: UserRegistrationForm = {
-    name: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-  }
-
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<UserRegistrationForm>({ defaultValues: initialValues })
+  } = useForm<UserRegistrationForm>({
+    defaultValues: { name: '', email: '', password: '', password_confirmation: '' },
+  })
 
   const { mutate, isPending } = useMutation({
     mutationFn: createAccount,
     onError: (error) => toast.error(error.message),
-    onSuccess: (data) => {
-      toast.success(data)
+    onSuccess: (message) => {
+      toast.success(message)
       reset()
     },
   })
 
-  const handleRegister = (formData: UserRegistrationForm) => mutate(formData)
-
   return (
     <>
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-white">Crear cuenta</h2>
-        <p className="text-slate-400 text-sm mt-1">Solicita acceso a la plataforma</p>
-      </div>
+      <AuthHeader title="Crear cuenta" description="Solicita acceso a la plataforma" />
 
-      <form onSubmit={handleSubmit(handleRegister)} className="space-y-4" noValidate>
-        <div className="space-y-1.5">
-          <label className={authLabelClass}>Nombre</label>
-          <input
-            type="text"
-            placeholder="Nombre de usuario"
-            className={authInputClass}
-            {...register('name', { required: 'El nombre es obligatorio' })}
-          />
-          {errors.name && <ErrorMessage>{errors.name.message}</ErrorMessage>}
-        </div>
-
-        <div className="space-y-1.5">
-          <label className={authLabelClass}>Email</label>
-          <input
-            type="email"
-            placeholder="usuario@empresa.com"
-            className={authInputClass}
-            {...register('email', {
-              required: 'El email es obligatorio',
-              pattern: { value: /\S+@\S+\.\S+/, message: 'Email no válido' },
-            })}
-          />
-          {errors.email && <ErrorMessage>{errors.email.message}</ErrorMessage>}
-        </div>
-
-        <div className="space-y-1.5">
-          <label className={authLabelClass}>Contraseña</label>
-          <input
-            type="password"
-            placeholder="Mínimo 8 caracteres"
-            className={authInputClass}
-            {...register('password', {
-              required: 'La contraseña es obligatoria',
-              minLength: { value: 8, message: 'Mínimo 8 caracteres' },
-            })}
-          />
-          {errors.password && <ErrorMessage>{errors.password.message}</ErrorMessage>}
-        </div>
-
-        <div className="space-y-1.5">
-          <label className={authLabelClass}>Confirmar contraseña</label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            className={authInputClass}
-            {...register('password_confirmation', {
-              required: 'Confirma tu contraseña',
-              validate: (value, values) =>
-                value === values.password || 'Las contraseñas no coinciden',
-            })}
-          />
-          {errors.password_confirmation && (
-            <ErrorMessage>{errors.password_confirmation.message}</ErrorMessage>
-          )}
-        </div>
-
-        <button type="submit" disabled={isPending} className={authButtonClass}>
+      <form
+        onSubmit={handleSubmit((data) => mutate(data))}
+        className="space-y-4 short:space-y-3"
+        noValidate
+      >
+        <AuthField
+          id="name"
+          label="Nombre"
+          icon={UserRound}
+          placeholder="Tu nombre"
+          autoComplete="name"
+          error={errors.name?.message}
+          {...register('name', { required: 'El nombre es obligatorio' })}
+        />
+        <AuthField
+          id="email"
+          label="Email"
+          type="email"
+          icon={Mail}
+          placeholder="usuario@dominio.com"
+          autoComplete="email"
+          error={errors.email?.message}
+          {...register('email', {
+            required: 'El email es obligatorio',
+            pattern: { value: /\S+@\S+\.\S+/, message: 'Email no válido' },
+          })}
+        />
+        <PasswordField
+          id="password"
+          label="Contraseña"
+          placeholder="Mínimo 8 caracteres"
+          autoComplete="new-password"
+          error={errors.password?.message}
+          {...register('password', {
+            required: 'La contraseña es obligatoria',
+            minLength: { value: 8, message: 'Mínimo 8 caracteres' },
+          })}
+        />
+        <PasswordField
+          id="password_confirmation"
+          label="Confirmar contraseña"
+          placeholder="Repite la contraseña"
+          autoComplete="new-password"
+          error={errors.password_confirmation?.message}
+          {...register('password_confirmation', {
+            required: 'Confirma tu contraseña',
+            validate: (value, values) =>
+              value === values.password || 'Las contraseñas no coinciden',
+          })}
+        />
+        <AuthButton type="submit" loading={isPending}>
           {isPending ? 'Creando cuenta...' : 'Crear cuenta'}
-        </button>
+        </AuthButton>
       </form>
 
-      <div className="mt-6 pt-6 border-t border-slate-800 text-center">
-        <Link to="/auth/login" className={authLinkClass}>
-          ¿Ya tienes cuenta? Iniciar sesión
-        </Link>
-      </div>
+      <AuthFooter>
+        <span>
+          ¿Ya tienes cuenta? <AuthLink to="/auth/login">Inicia sesión</AuthLink>
+        </span>
+      </AuthFooter>
     </>
   )
 }

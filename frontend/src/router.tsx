@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/ReactToastify.css'
+import PageLoader from '@/components/loading/PageLoader'
 import { useTheme } from '@/hooks/useTheme'
 
 // Layouts y vistas se cargan bajo demanda (code splitting) para reducir el bundle inicial
@@ -21,7 +22,7 @@ export default function Router() {
 
   return (
     <BrowserRouter>
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Vistas autenticadas (sidebar + socket conectado) */}
           <Route element={<AppLayout />}>

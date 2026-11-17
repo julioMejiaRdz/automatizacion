@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import AppLogo from '@/components/AppLogo'
+import PageLoader from '@/components/loading/PageLoader'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { useAuth } from '@/hooks/useAuth'
 import { APP_DESCRIPTION, APP_NAME, FOOTER_TEXT } from '@/lib/config'
@@ -16,7 +17,7 @@ import { APP_DESCRIPTION, APP_NAME, FOOTER_TEXT } from '@/lib/config'
 export default function AuthLayout() {
   const { isError, isLoading } = useAuth()
 
-  if (isLoading) return <p className="p-6 text-muted-foreground">Cargando...</p>
+  if (isLoading) return <PageLoader />
   if (!isError) return <Navigate to="/" />
 
   return (

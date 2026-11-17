@@ -2,6 +2,8 @@ import { Suspense, useEffect } from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import AppSidebar from '@/components/AppSidebar'
+import PageLoader from '@/components/loading/PageLoader'
+import ViewSkeleton from '@/components/loading/ViewSkeleton'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { Separator } from '@/components/ui/separator'
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar'
@@ -19,7 +21,7 @@ export default function AppLayout() {
     }
   }, [data])
 
-  if (isLoading) return <p className="p-6 text-muted-foreground">Cargando...</p>
+  if (isLoading) return <PageLoader />
   if (isError || !data) return <Navigate to="/auth/login" />
 
   return (
@@ -38,7 +40,7 @@ export default function AppLayout() {
             </div>
           </header>
           <main className="flex-1 p-4 md:p-6">
-            <Suspense fallback={<p className="text-muted-foreground">Cargando...</p>}>
+            <Suspense fallback={<ViewSkeleton />}>
               <Outlet />
             </Suspense>
           </main>

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getDevices } from '@/api/DeviceAPI'
 import DeviceCard from '@/components/devices/DeviceCard'
+import DeviceCardSkeleton from '@/components/devices/DeviceCardSkeleton'
 import { useDeviceReadings } from '@/hooks/useDeviceReadings'
 
 export default function DashboardView() {
@@ -26,7 +27,14 @@ export default function DashboardView() {
         </div>
       </div>
 
-      {isLoading && <p className="text-muted-foreground">Cargando dispositivos...</p>}
+      {isLoading && (
+        <div role="status" className="grid animate-delayed-in gap-6 xl:grid-cols-2">
+          <span className="sr-only">Cargando dispositivos...</span>
+          {Array.from({ length: 2 }, (_, i) => (
+            <DeviceCardSkeleton key={i} />
+          ))}
+        </div>
+      )}
       {isError && <p className="text-destructive">{error.message}</p>}
       {!isLoading && !isError && devices.length === 0 && (
         <p className="text-muted-foreground">

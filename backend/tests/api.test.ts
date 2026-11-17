@@ -6,10 +6,10 @@ import { createApp } from '../src/server'
 const app = createApp()
 
 describe('API', () => {
-  it('GET /api/health responde ok', async () => {
+  it('GET /api/health responde ok con el estado del broker', async () => {
     const res = await request(app).get('/api/health')
     expect(res.status).toBe(200)
-    expect(res.body).toEqual({ status: 'ok' })
+    expect(res.body).toEqual({ status: 'ok', mqtt: 'disconnected' })
   })
 
   it('valida el body del login', async () => {

@@ -1,10 +1,41 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import type { DeviceStatus } from '@/lib/deviceStatus'
+import { cn } from '@/lib/utils'
 import type { Device, DeviceReading, ReadingValue } from '@/types/index'
 
 type DeviceCardProps = {
   device: Device
   reading?: DeviceReading
   error?: string
+  /** Estado del enlace con el dispositivo (ver lib/deviceStatus) */
+  status?: DeviceStatus
+  /** Tiempo desde la última lectura ("hace 3 min"), para el estado `stale` */
+  lastSeen?: string
+}
+
+const STATUS_STYLES: Record<DeviceStatus, { label: string; className: string; dot: string }> = {
+  online: {
+    label: 'En línea',
+    className: 'bg-green-500/10 text-green-700 dark:text-green-400',
+    dot: 'bg-green-500',
+  },
+  stale: {
+    label: 'Sin datos',
+    className: 'bg-amber-500/15 text-amber-700 dark:text-amber-400',
+    dot: 'bg-amber-500',
+  },
+  waiting: {
+    label: 'Esperando datos',
+    className: 'bg-muted text-muted-foreground',
+    dot: 'bg-muted-foreground/40',
+  },
 }
 
 const formatValue = (value: ReadingValue | undefined) => {
@@ -14,7 +45,15 @@ const formatValue = (value: ReadingValue | undefined) => {
   return value
 }
 
-export default function DeviceCard({ device, reading, error }: DeviceCardProps) {
+export default function DeviceCard({
+  device,
+  reading,
+  error,
+  status = 'waiting',
+  lastSeen,
+}: DeviceCardProps) {
+  const badge = STATUS_STYLES[status]
+
   return (
     <Card>
       <CardHeader>
@@ -25,6 +64,19 @@ export default function DeviceCard({ device, reading, error }: DeviceCardProps) 
               ? `Última lectura: ${new Date(reading.timestamp).toLocaleString('es')}`
               : 'Esperando datos...')}
         </CardDescription>
+        <CardAction>
+          <span
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap',
+              badge.className,
+            )}
+            title={status === 'stale' && lastSeen ? `Última lectura ${lastSeen}` : undefined}
+          >
+            <span aria-hidden="true" className={cn('size-2 rounded-full', badge.dot)} />
+            {badge.label}
+            {status === 'stale' && lastSeen && <span className="font-normal">· {lastSeen}</span>}
+          </span>
+        </CardAction>
       </CardHeader>
       <CardContent>
         {device.fields.length === 0 ? (

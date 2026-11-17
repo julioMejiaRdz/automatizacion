@@ -10,6 +10,7 @@ describe('parsePayload', () => {
     expect(reading).toEqual({
       deviceId: 'demo-001',
       timestamp: '2026-01-01T00:00:00Z',
+      receivedAt: expect.any(String),
       values: { temperatura: 25.4, en_marcha: true },
     })
   })
@@ -18,6 +19,14 @@ describe('parsePayload', () => {
     const reading = parsePayload('demo-001', '{"presion": 1.2}')
     expect(reading?.values).toEqual({ presion: 1.2 })
     expect(Number.isNaN(Date.parse(reading!.timestamp))).toBe(false)
+    expect(reading!.timestamp).toBe(reading!.receivedAt)
+  })
+
+  it('receivedAt es siempre la hora del servidor, aunque el PLC envíe otra', () => {
+    const before = Date.now()
+    const reading = parsePayload('demo-001', '{"timestamp": "2001-01-01T00:00:00Z", "a": 1}')
+    expect(reading!.timestamp).toBe('2001-01-01T00:00:00Z')
+    expect(Date.parse(reading!.receivedAt)).toBeGreaterThanOrEqual(before)
   })
 
   it('ignora valores anidados', () => {

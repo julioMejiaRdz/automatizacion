@@ -9,17 +9,21 @@ import Device from '../../models/Device'
  * Formato esperado del payload MQTT (JSON plano, un topic por dispositivo):
  *   { "timestamp": "2026-01-01T12:00:00Z", "temperatura": 25.4, "presion": 1.2 }
  * `timestamp` es opcional (si falta se usa la hora de recepción) y el resto de
- * claves deben coincidir con `fields[].key` del dispositivo.
+ * claves deben coincidir con `fields[].key` del dispositivo. `receivedAt` es siempre la hora del
+ * servidor al recibirla (el reloj de un PLC puede estar desfasado): con ella se detecta si un
+ * dispositivo dejó de enviar datos.
  */
 export type ReadingValue = number | string | boolean | null
 
 export type DeviceReading = {
   deviceId: string
   timestamp: string
+  receivedAt: string
   values: Record<string, ReadingValue>
 }
 
 type ReadingHandler = (reading: DeviceReading) => void
+type StatusHandler = (connected: boolean) => void
 
 /** Cada cuánto se releen los dispositivos de MongoDB para ajustar las suscripciones */
 const RESYNC_INTERVAL_MS = 30_000
@@ -27,6 +31,9 @@ const RESYNC_INTERVAL_MS = 30_000
 let client: MqttClient | null = null
 let resyncTimer: NodeJS.Timeout | null = null
 let onReading: ReadingHandler = () => {}
+let onStatus: StatusHandler = () => {}
+/** Estado de la conexión con el broker; se notifica solo cuando cambia */
+let brokerConnected = false
 /** topic → deviceId de los dispositivos registrados */
 const topicToDevice = new Map<string, string>()
 /** Topics a los que el cliente está suscrito actualmente */
@@ -53,9 +60,11 @@ export function parsePayload(deviceId: string, raw: Buffer | string): DeviceRead
     if (isReadingValue(value)) values[key] = value
   }
 
+  const now = new Date().toISOString()
   return {
     deviceId,
-    timestamp: typeof timestamp === 'string' ? timestamp : new Date().toISOString(),
+    timestamp: typeof timestamp === 'string' ? timestamp : now,
+    receivedAt: now,
     values,
   }
 }
@@ -91,8 +100,21 @@ export async function syncDeviceSubscriptions() {
 
 export const getLastReading = (deviceId: string) => lastReadings.get(deviceId)
 
-export function initMqtt(handler: ReadingHandler) {
+export const isMqttConnected = () => brokerConnected
+
+const setBrokerConnected = (connected: boolean) => {
+  if (connected === brokerConnected) return
+  brokerConnected = connected
+  onStatus(connected)
+}
+
+/**
+ * Conecta con el broker. `handler` recibe cada lectura y `statusHandler` cada cambio de conexión
+ * con el broker (para mostrarlo en el dashboard).
+ */
+export function initMqtt(handler: ReadingHandler, statusHandler: StatusHandler = () => {}) {
   onReading = handler
+  onStatus = statusHandler
 
   client = connect(env.MQTT_URL, {
     username: env.MQTT_USER,
@@ -102,6 +124,7 @@ export function initMqtt(handler: ReadingHandler) {
 
   client.on('connect', async () => {
     console.log(colors.cyan.bold(`MQTT conectado a ${env.MQTT_URL}`))
+    setBrokerConnected(true)
     // Tras una (re)conexión el broker no conserva las suscripciones: se rehacen todas
     subscribed.clear()
     try {
@@ -125,6 +148,10 @@ export function initMqtt(handler: ReadingHandler) {
   })
 
   client.on('error', (error) => console.error('MQTT:', error.message))
+  client.on('close', () => {
+    if (brokerConnected) console.warn(colors.yellow('MQTT: conexión con el broker perdida'))
+    setBrokerConnected(false)
+  })
 
   // Los cambios hechos por la API se aplican al instante; esta resincronización periódica cubre
   // los hechos desde otro proceso (npm run seed, cambios directos en MongoDB).

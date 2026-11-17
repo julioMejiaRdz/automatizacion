@@ -55,6 +55,11 @@ export type ReadingValue = number | string | boolean | null
 
 export type DeviceReading = {
   deviceId: string
+  /** Hora de la lectura (la del PLC si la envía) */
   timestamp: string
+  /** Hora del servidor al recibirla */
+  receivedAt: string
+  /** Solo en la última lectura enviada al unirse: antigüedad en ms según el servidor */
+  ageMs?: number
   values: Record<string, ReadingValue>
 }

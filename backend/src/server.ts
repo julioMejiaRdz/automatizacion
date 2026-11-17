@@ -7,6 +7,7 @@ import { corsConfig } from './config/cors'
 import { errorHandler, notFound } from './middleware/errorHandler'
 import authRoutes from './routes/authRoutes'
 import deviceRoutes from './routes/deviceRoutes'
+import { isMqttConnected } from './services/mqtt'
 
 /** Crea la app de Express sin conectar a MongoDB ni abrir el puerto (así se puede testear). */
 export function createApp() {
@@ -21,7 +22,7 @@ export function createApp() {
   app.use(express.json({ limit: '100kb' }))
 
   app.get('/api/health', (_req, res) => {
-    res.json({ status: 'ok' })
+    res.json({ status: 'ok', mqtt: isMqttConnected() ? 'connected' : 'disconnected' })
   })
   app.use('/api/auth', authRoutes)
   app.use('/api/devices', deviceRoutes)

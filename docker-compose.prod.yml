@@ -39,6 +39,7 @@ services:
         VITE_APP_LOGO: ${APP_LOGO:-}
         VITE_BRAND_COLOR: ${BRAND_COLOR:-}
         VITE_FOOTER_TEXT: ${FOOTER_TEXT:-}
+        VITE_DEVICE_TIMEOUT: ${DEVICE_TIMEOUT:-}
     image: automatizacion-web:latest
     environment:
       TLS_MODE: ${TLS_MODE:-none}

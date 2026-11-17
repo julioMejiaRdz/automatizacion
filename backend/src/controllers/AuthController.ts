@@ -150,7 +150,8 @@ export class AuthController {
 
     const user = await User.findById(getAuthUser(req)._id)
     if (!user || !(await checkPassword(current_password, user.password))) {
-      return res.status(401).json({ error: 'La contraseña actual no es correcta' })
+      // 400 y no 401: con sesión válida, 401 se reserva al token (el frontend cierra la sesión con él)
+      return res.status(400).json({ error: 'La contraseña actual no es correcta' })
     }
 
     user.password = await hashPassword(password)
@@ -162,7 +163,7 @@ export class AuthController {
   static checkPassword = async (req: Request, res: Response) => {
     const user = await User.findById(getAuthUser(req)._id)
     if (!user || !(await checkPassword(req.body.password, user.password))) {
-      return res.status(401).json({ error: 'La contraseña no es correcta' })
+      return res.status(400).json({ error: 'La contraseña no es correcta' })
     }
     res.send('Contraseña correcta')
   }

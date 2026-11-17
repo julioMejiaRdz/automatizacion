@@ -13,6 +13,7 @@ import {
   AuthLink,
   PasswordField,
 } from '@/components/auth/AuthForm'
+import { SESSION_EXPIRED_KEY } from '@/lib/session'
 import type { UserLoginForm } from '@/types/index'
 
 export default function LoginView() {
@@ -27,6 +28,10 @@ export default function LoginView() {
     if (localStorage.getItem('show_farewell')) {
       toast.info('Sesión cerrada')
       localStorage.removeItem('show_farewell')
+    }
+    if (localStorage.getItem(SESSION_EXPIRED_KEY)) {
+      toast.warning('Tu sesión expiró. Inicia sesión de nuevo.')
+      localStorage.removeItem(SESSION_EXPIRED_KEY)
     }
   }, [])
 

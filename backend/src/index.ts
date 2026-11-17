@@ -11,8 +11,8 @@ async function main() {
   await connectDB()
 
   const server = http.createServer(createApp())
-  const { io, emitReading } = initWebSocket(server)
-  initMqtt(emitReading)
+  const { io, emitReading, emitMqttStatus } = initWebSocket(server)
+  initMqtt(emitReading, emitMqttStatus)
 
   server.listen(env.PORT, () => {
     console.log(colors.cyan.bold(`API REST y Socket.IO en el puerto ${env.PORT}`))

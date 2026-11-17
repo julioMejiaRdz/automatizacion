@@ -92,11 +92,15 @@ Los cambios hechos por la API se aplican a las suscripciones MQTT al instante. L
 
 ### Eventos de Socket.IO
 
-| Dirección          | Evento           | Datos                                                   |
-| ------------------ | ---------------- | ------------------------------------------------------- |
-| cliente → servidor | `join-device`    | `deviceId`, ack `{ ok: true }` o `{ ok: false, error }` |
-| cliente → servidor | `leave-device`   | `deviceId`                                              |
-| servidor → cliente | `device-reading` | `{ deviceId, timestamp, values }`                       |
+| Dirección          | Evento            | Datos                                                                                             |
+| ------------------ | ----------------- | ------------------------------------------------------------------------------------------------- |
+| cliente → servidor | `join-device`     | `deviceId`, ack `{ ok: true }` o `{ ok: false, error }`                                           |
+| cliente → servidor | `leave-device`    | `deviceId`                                                                                        |
+| cliente → servidor | `get-mqtt-status` | ack `{ connected }`                                                                               |
+| servidor → cliente | `device-reading`  | `{ deviceId, timestamp, receivedAt, values }` (la lectura inicial al unirse lleva además `ageMs`) |
+| servidor → cliente | `mqtt-status`     | `{ connected }`: conexión del backend con el broker, al conectar y en cada cambio                 |
+
+`receivedAt` es la hora del servidor al recibir la lectura (`timestamp` puede venir del PLC, cuyo reloj puede estar desfasado). El dashboard muestra el estado del servidor y del broker, y marca cada dispositivo como **En línea**, **Sin datos** (si pasan más de `VITE_DEVICE_TIMEOUT` segundos sin lecturas, 60 por defecto) o **Esperando datos**. `/api/health` incluye `mqtt: "connected" | "disconnected"`.
 
 Cualquier usuario autenticado puede ver cualquier dispositivo; solo se valida que el dispositivo exista.
 

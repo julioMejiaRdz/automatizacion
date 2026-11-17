@@ -29,11 +29,23 @@ describe('DeviceCard', () => {
         reading={{
           deviceId: 'demo-001',
           timestamp: '2026-01-01T12:00:00Z',
+          receivedAt: '2026-01-01T12:00:01Z',
           values: { temperatura: 25.456, en_marcha: true },
         }}
       />,
     )
     expect(screen.getByText('25,46')).toBeInTheDocument()
     expect(screen.getByText('Sí')).toBeInTheDocument()
+  })
+
+  it('sin lecturas muestra "Esperando datos" como estado', () => {
+    render(<DeviceCard device={device} />)
+    expect(screen.getByText('Esperando datos')).toBeInTheDocument()
+  })
+
+  it('marca "Sin datos" con el tiempo transcurrido si dejó de enviar', () => {
+    render(<DeviceCard device={device} status="stale" lastSeen="hace 3 min" />)
+    expect(screen.getByText('Sin datos')).toBeInTheDocument()
+    expect(screen.getByText('· hace 3 min')).toBeInTheDocument()
   })
 })

@@ -4,7 +4,10 @@ import { getDevices } from '@/api/DeviceAPI'
 import PageHeader from '@/components/PageHeader'
 import DeviceCard from '@/components/devices/DeviceCard'
 import DeviceCardSkeleton from '@/components/devices/DeviceCardSkeleton'
+import LinkIndicator from '@/components/devices/LinkIndicator'
 import { useDeviceReadings } from '@/hooks/useDeviceReadings'
+import { useNow } from '@/hooks/useNow'
+import { formatElapsed, getDeviceStatus } from '@/lib/deviceStatus'
 
 export default function DashboardView() {
   const {
@@ -17,7 +20,11 @@ export default function DashboardView() {
     queryFn: getDevices,
   })
 
-  const { readings, connected, errors } = useDeviceReadings(devices.map((device) => device._id))
+  const { readings, seenAt, connected, mqttConnected, errors } = useDeviceReadings(
+    devices.map((device) => device._id),
+  )
+  // Se recalcula cada 5 s para detectar dispositivos que dejaron de enviar datos
+  const now = useNow(5000)
 
   return (
     <div className="space-y-6">
@@ -29,9 +36,9 @@ export default function DashboardView() {
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xl font-semibold">Dispositivos</h2>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className={`size-2.5 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
-          {connected ? 'Tiempo real conectado' : 'Tiempo real desconectado'}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
+          <LinkIndicator label="Servidor" connected={connected} />
+          <LinkIndicator label="Broker MQTT" connected={mqttConnected} />
         </div>
       </div>
 
@@ -58,6 +65,10 @@ export default function DashboardView() {
             device={device}
             reading={readings[device._id]}
             error={errors[device._id]}
+            status={getDeviceStatus(seenAt[device._id], now)}
+            lastSeen={
+              seenAt[device._id] !== undefined ? formatElapsed(now - seenAt[device._id]) : undefined
+            }
           />
         ))}
       </div>

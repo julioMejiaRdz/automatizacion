@@ -25,6 +25,12 @@ export const FOOTER_TEXT = (import.meta.env.VITE_FOOTER_TEXT || '').replace(
   String(new Date().getFullYear()),
 )
 
+/**
+ * Segundos sin recibir lecturas tras los cuales un dispositivo se marca "Sin datos".
+ * Ajústalo a la frecuencia de publicación de los PLC del proyecto (por defecto 60).
+ */
+export const DEVICE_TIMEOUT_MS = (Number(import.meta.env.VITE_DEVICE_TIMEOUT) || 60) * 1000
+
 /** "logo.png" → "/logo.png": sin la barra inicial el navegador lo buscaría relativo a la ruta actual. */
 function normalizeLogoPath(value: string) {
   const path = value.trim()

@@ -6,6 +6,7 @@ interface ImportMetaEnv {
   readonly VITE_APP_LOGO?: string
   readonly VITE_BRAND_COLOR?: string
   readonly VITE_FOOTER_TEXT?: string
+  readonly VITE_DEVICE_TIMEOUT?: string
   readonly VITE_API_URL: string
   readonly VITE_WS_URL?: string
 }

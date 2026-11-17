@@ -1,7 +1,8 @@
 import { type CSSProperties, Suspense, useEffect } from 'react'
-import { Navigate, Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import AppSidebar from '@/components/AppSidebar'
+import ErrorBoundary from '@/components/ErrorBoundary'
 import Loader from '@/components/loading/Loader'
 import ViewSkeleton from '@/components/loading/ViewSkeleton'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
@@ -15,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth'
  */
 export default function AppLayout() {
   const { data, isError, isLoading } = useAuth()
+  const { pathname } = useLocation()
 
   useEffect(() => {
     if (localStorage.getItem('show_welcome') && data) {
@@ -35,9 +37,12 @@ export default function AppLayout() {
           {/* El socket se conecta solo con la sesión ya validada */}
           {data ? (
             <SocketProvider>
-              <Suspense fallback={<ViewSkeleton />}>
-                <Outlet />
-              </Suspense>
+              {/* key: al cambiar de ruta se limpia el error de la vista anterior */}
+              <ErrorBoundary key={pathname}>
+                <Suspense fallback={<ViewSkeleton />}>
+                  <Outlet />
+                </Suspense>
+              </ErrorBoundary>
             </SocketProvider>
           ) : (
             <Loader />

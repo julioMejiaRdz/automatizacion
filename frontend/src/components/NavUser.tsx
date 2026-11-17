@@ -23,16 +23,28 @@ export default function NavUser({ user }: { user: User }) {
   const logout = useLogout()
   const initial = user.name.charAt(0).toUpperCase()
 
-  const userInfo = (
+  // En el sidebar (fondo de marca) el avatar va invertido y el email en blanco translúcido;
+  // en el menú desplegable (fondo del tema) se usan los colores normales
+  const userInfo = (inSidebar: boolean) => (
     <>
       <Avatar className="size-8 rounded-lg">
-        <AvatarFallback className="rounded-lg bg-brand text-brand-foreground">
+        <AvatarFallback
+          className={
+            inSidebar
+              ? 'rounded-lg bg-white text-brand'
+              : 'rounded-lg bg-brand text-brand-foreground'
+          }
+        >
           {initial}
         </AvatarFallback>
       </Avatar>
       <div className="grid flex-1 text-left text-sm leading-tight">
         <span className="truncate font-medium">{user.name}</span>
-        <span className="truncate text-xs text-muted-foreground">{user.email}</span>
+        <span
+          className={`truncate text-xs ${inSidebar ? 'text-sidebar-foreground/75' : 'text-muted-foreground'}`}
+        >
+          {user.email}
+        </span>
       </div>
     </>
   )
@@ -46,7 +58,7 @@ export default function NavUser({ user }: { user: User }) {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              {userInfo}
+              {userInfo(true)}
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
@@ -57,7 +69,7 @@ export default function NavUser({ user }: { user: User }) {
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5">{userInfo}</div>
+              <div className="flex items-center gap-2 px-1 py-1.5">{userInfo(false)}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>

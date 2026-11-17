@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
+import { LayoutDashboard } from 'lucide-react'
 import { getDevices } from '@/api/DeviceAPI'
+import PageHeader from '@/components/PageHeader'
 import DeviceCard from '@/components/devices/DeviceCard'
 import DeviceCardSkeleton from '@/components/devices/DeviceCardSkeleton'
 import { useDeviceReadings } from '@/hooks/useDeviceReadings'
@@ -19,8 +21,14 @@ export default function DashboardView() {
 
   return (
     <div className="space-y-6">
+      <PageHeader
+        icon={LayoutDashboard}
+        title="Dashboard"
+        description="Lecturas en tiempo real de los dispositivos conectados."
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h2 className="text-xl font-semibold">Dispositivos</h2>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className={`size-2.5 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
           {connected ? 'Tiempo real conectado' : 'Tiempo real desconectado'}

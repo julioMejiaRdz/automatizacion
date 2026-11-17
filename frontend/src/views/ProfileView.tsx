@@ -2,7 +2,9 @@ import { useForm } from 'react-hook-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
 import { updateCurrentUserPassword, updateProfile } from '@/api/AuthAPI'
+import { UserRound } from 'lucide-react'
 import ErrorMessage from '@/components/ErrorMessage'
+import PageHeader from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -143,10 +145,16 @@ export default function ProfileView() {
   if (!user) return null
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">Mi perfil</h1>
-      <ProfileForm user={user} />
-      <ChangePasswordForm />
+    <div className="space-y-6">
+      <PageHeader
+        icon={UserRound}
+        title="Mi perfil"
+        description="Actualiza tus datos de contacto y la contraseña de tu cuenta."
+      />
+      <div className="max-w-2xl space-y-6">
+        <ProfileForm user={user} />
+        <ChangePasswordForm />
+      </div>
     </div>
   )
 }

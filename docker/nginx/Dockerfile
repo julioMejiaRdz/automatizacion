@@ -10,9 +10,18 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY frontend/ ./
 
-# En producción la API y Socket.IO se sirven en el mismo dominio que el frontend
+# Personalización del proyecto (se incrustan en el build). El logo debe estar en frontend/public.
 ARG VITE_APP_NAME=Automatización
+ARG VITE_APP_DESCRIPTION=
+ARG VITE_APP_LOGO=
+ARG VITE_BRAND_COLOR=
+ARG VITE_FOOTER_TEXT=
+# En producción la API y Socket.IO se sirven en el mismo dominio que el frontend
 ENV VITE_APP_NAME=$VITE_APP_NAME \
+    VITE_APP_DESCRIPTION=$VITE_APP_DESCRIPTION \
+    VITE_APP_LOGO=$VITE_APP_LOGO \
+    VITE_BRAND_COLOR=$VITE_BRAND_COLOR \
+    VITE_FOOTER_TEXT=$VITE_FOOTER_TEXT \
     VITE_API_URL=/api \
     VITE_WS_URL=
 RUN npm run build

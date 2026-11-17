@@ -35,6 +35,10 @@ services:
       dockerfile: docker/nginx/Dockerfile
       args:
         VITE_APP_NAME: ${APP_NAME:?Define APP_NAME}
+        VITE_APP_DESCRIPTION: ${APP_DESCRIPTION:-}
+        VITE_APP_LOGO: ${APP_LOGO:-}
+        VITE_BRAND_COLOR: ${BRAND_COLOR:-}
+        VITE_FOOTER_TEXT: ${FOOTER_TEXT:-}
     image: automatizacion-web:latest
     environment:
       TLS_MODE: ${TLS_MODE:-none}
